@@ -11,5 +11,7 @@ PKImagePickerDemo
 
 `#import 'PKImagePickerViewController.h'`
 `PKImagePickerViewController *imagePicker = [[PKImagePickerViewController alloc]init];`
+
 `imagePicker.delegate = self;`
+
 `[self presentViewController:imagePicker animated:YES completion:nil];`
