@@ -12,6 +12,7 @@
 
 -(void)imageSelected:(UIImage*)img;
 -(void)imageSelectionCancelled;
+-(void)imageSelectionError:(NSError *) error;
 
 @end
 

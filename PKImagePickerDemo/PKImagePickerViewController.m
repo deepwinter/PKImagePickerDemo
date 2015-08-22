@@ -70,43 +70,50 @@
     NSArray *devices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
     if (devices.count > 0) {
         self.captureDevice = devices[0];
-    
+        
         NSError *error = nil;
         AVCaptureDeviceInput *input = [AVCaptureDeviceInput deviceInputWithDevice:self.captureDevice error:&error];
-    
-        [self.captureSession addInput:input];
-    
-        self.stillImageOutput = [[AVCaptureStillImageOutput alloc]init];
-        NSDictionary * outputSettings = [[NSDictionary alloc] initWithObjectsAndKeys: AVVideoCodecJPEG, AVVideoCodecKey, nil];
-        [self.stillImageOutput setOutputSettings:outputSettings];
-        [self.captureSession addOutput:self.stillImageOutput];
-    
-    
-        if (self.interfaceOrientation == UIInterfaceOrientationLandscapeLeft) {
-        _captureVideoPreviewLayer.connection.videoOrientation = AVCaptureVideoOrientationLandscapeLeft;
+        
+        if(input != nil) {
+            
+            [self.captureSession addInput:input];
+            
+            self.stillImageOutput = [[AVCaptureStillImageOutput alloc]init];
+            NSDictionary * outputSettings = [[NSDictionary alloc] initWithObjectsAndKeys: AVVideoCodecJPEG, AVVideoCodecKey, nil];
+            [self.stillImageOutput setOutputSettings:outputSettings];
+            [self.captureSession addOutput:self.stillImageOutput];
+            
+            
+            if (self.interfaceOrientation == UIInterfaceOrientationLandscapeLeft) {
+                _captureVideoPreviewLayer.connection.videoOrientation = AVCaptureVideoOrientationLandscapeLeft;
+            }
+            else if (self.interfaceOrientation == UIInterfaceOrientationLandscapeRight) {
+                _captureVideoPreviewLayer.connection.videoOrientation = AVCaptureVideoOrientationLandscapeRight;
+            }
+            
+            UIButton *camerabutton = [[UIButton alloc]initWithFrame:CGRectMake(CGRectGetWidth(self.view.bounds)/2-50, CGRectGetHeight(self.view.bounds)-100, 100, 100)];
+            [camerabutton setImage:[UIImage imageNamed:@"PKImageBundle.bundle/take-snap"] forState:UIControlStateNormal];
+            [camerabutton addTarget:self action:@selector(capturePhoto:) forControlEvents:UIControlEventTouchUpInside];
+            [camerabutton setTintColor:[UIColor blueColor]];
+            [camerabutton.layer setCornerRadius:20.0];
+            [self.view addSubview:camerabutton];
+            
+            UIButton *flashbutton = [[UIButton alloc]initWithFrame:CGRectMake(5, 5, 30, 31)];
+            [flashbutton setImage:[UIImage imageNamed:@"PKImageBundle.bundle/flash"] forState:UIControlStateNormal];
+            [flashbutton setImage:[UIImage imageNamed:@"PKImageBundle.bundle/flashselected"] forState:UIControlStateSelected];
+            [flashbutton addTarget:self action:@selector(flash:) forControlEvents:UIControlEventTouchUpInside];
+            [self.view addSubview:flashbutton];
+            
+            UIButton *frontcamera = [[UIButton alloc]initWithFrame:CGRectMake(CGRectGetWidth(self.view.frame)-50, 5, 47, 25)];
+            [frontcamera setImage:[UIImage imageNamed:@"PKImageBundle.bundle/front-camera"] forState:UIControlStateNormal];
+            [frontcamera addTarget:self action:@selector(showFrontCamera:) forControlEvents:UIControlEventTouchUpInside];
+            [frontcamera setBackgroundColor:[UIColor colorWithWhite:0.3 alpha:0.2]];
+            [self.view addSubview:frontcamera];
+        } else {
+            if ([self.delegate respondsToSelector:@selector(imageSelectionError:)]) {
+                [self.delegate imageSelectionError:error];
+            }
         }
-        else if (self.interfaceOrientation == UIInterfaceOrientationLandscapeRight) {
-        _captureVideoPreviewLayer.connection.videoOrientation = AVCaptureVideoOrientationLandscapeRight;
-        }
-    
-    UIButton *camerabutton = [[UIButton alloc]initWithFrame:CGRectMake(CGRectGetWidth(self.view.bounds)/2-50, CGRectGetHeight(self.view.bounds)-100, 100, 100)];
-    [camerabutton setImage:[UIImage imageNamed:@"PKImageBundle.bundle/take-snap"] forState:UIControlStateNormal];
-    [camerabutton addTarget:self action:@selector(capturePhoto:) forControlEvents:UIControlEventTouchUpInside];
-    [camerabutton setTintColor:[UIColor blueColor]];
-    [camerabutton.layer setCornerRadius:20.0];
-    [self.view addSubview:camerabutton];
-    
-    UIButton *flashbutton = [[UIButton alloc]initWithFrame:CGRectMake(5, 5, 30, 31)];
-    [flashbutton setImage:[UIImage imageNamed:@"PKImageBundle.bundle/flash"] forState:UIControlStateNormal];
-    [flashbutton setImage:[UIImage imageNamed:@"PKImageBundle.bundle/flashselected"] forState:UIControlStateSelected];
-    [flashbutton addTarget:self action:@selector(flash:) forControlEvents:UIControlEventTouchUpInside];
-    [self.view addSubview:flashbutton];
-    
-    UIButton *frontcamera = [[UIButton alloc]initWithFrame:CGRectMake(CGRectGetWidth(self.view.frame)-50, 5, 47, 25)];
-    [frontcamera setImage:[UIImage imageNamed:@"PKImageBundle.bundle/front-camera"] forState:UIControlStateNormal];
-    [frontcamera addTarget:self action:@selector(showFrontCamera:) forControlEvents:UIControlEventTouchUpInside];
-    [frontcamera setBackgroundColor:[UIColor colorWithWhite:0.3 alpha:0.2]];
-    [self.view addSubview:frontcamera];
     }
     
     UIButton *album = [[UIButton alloc]initWithFrame:CGRectMake(CGRectGetWidth(self.view.frame)-35, CGRectGetHeight(self.view.frame)-40, 27, 27)];
@@ -222,22 +229,36 @@
             self.captureDevice = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo][1];
             
             [self.captureSession beginConfiguration];
-            AVCaptureDeviceInput * newInput = [AVCaptureDeviceInput deviceInputWithDevice:self.captureDevice error:nil];
+            NSError * error;
+            AVCaptureDeviceInput * newInput = [AVCaptureDeviceInput deviceInputWithDevice:self.captureDevice error:&error];
             for (AVCaptureInput * oldInput in self.captureSession.inputs) {
                 [self.captureSession removeInput:oldInput];
             }
-            [self.captureSession addInput:newInput];
+            if (newInput != nil) {
+                [self.captureSession addInput:newInput];
+            } else {
+                if ([self.delegate respondsToSelector:@selector(imageSelectionError:)]) {
+                    [self.delegate imageSelectionError:error];
+                }
+            }
             [self.captureSession commitConfiguration];
         }
         else if (self.captureDevice == [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo][1]) {
             // front active, switch to rear
             self.captureDevice = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo][0];
             [self.captureSession beginConfiguration];
-            AVCaptureDeviceInput * newInput = [AVCaptureDeviceInput deviceInputWithDevice:self.captureDevice error:nil];
+            NSError * error;
+            AVCaptureDeviceInput * newInput = [AVCaptureDeviceInput deviceInputWithDevice:self.captureDevice error:&error];
             for (AVCaptureInput * oldInput in self.captureSession.inputs) {
                 [self.captureSession removeInput:oldInput];
             }
-            [self.captureSession addInput:newInput];
+            if(newInput != nil) {
+                [self.captureSession addInput:newInput];
+            } else {
+                if ([self.delegate respondsToSelector:@selector(imageSelectionError:)]) {
+                    [self.delegate imageSelectionError:error];
+                }
+            }
             [self.captureSession commitConfiguration];
         }
         
