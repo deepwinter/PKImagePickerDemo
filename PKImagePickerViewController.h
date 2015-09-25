@@ -12,12 +12,12 @@
 
 -(void)imageSelected:(UIImage*)img;
 -(void)imageSelectionCancelled;
+-(void)imageSelectionError:(NSError *) error;
 
 @end
 
 @interface PKImagePickerViewController : UIViewController<UIImagePickerControllerDelegate,UINavigationControllerDelegate>
 
 @property(nonatomic,weak) id<PKImagePickerViewControllerDelegate> delegate;
-@property (assign, nonatomic) BOOL shouldSkipImageConfirmation;
 
 @end
